@@ -137,10 +137,12 @@ Step cost to move to selected grids (Default cost is 1) [Pos, Cost]:
 [q5,100]
 [s3,100]
 [s5,100]
-Number of Enemy King, Queen, Bishop, Rook, Knight (space between):1 0 0 0 1
+Number of Enemy King, Queen, Bishop, Rook, Knight (space between):0 2 0 1 1
 Position of Enemy Pieces:
-[King,r3]
-[Knight,n6]
+[Queen,i15]
+[Queen,k17]
+[Rook,g19]
+[Knight,n18]
 Number of Own King, Queen, Bishop, Rook, Knight (space between):1 0 0 0 0
 Starting Position of Pieces [Piece, Pos]:
 [King,a20]

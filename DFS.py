@@ -6,7 +6,7 @@ import string
 import math
 from queue import Queue
 # Helper functions to aid in your implementation. Can edit/remove
-EMPTY_SPACE = '0'
+EMPTY_SPACE = ' '
 GOAL = 'G'
 OWN_KING = '♚'
 REACHED = '.'
@@ -60,7 +60,7 @@ def no_obstacle(row, col):
     return (row, col) not in obstacles
 
 def can_travel(board, col, row):
-    return (row, col) not in board.obstacles and (row, col) not in reached
+    return (row, col) not in obstacles and (row, col) not in reached
 
 """#######################################################################
 The code below refers to the classes of the chess pieces, including King, Queen, Bishop, Rook and Knight
@@ -76,23 +76,29 @@ class King(Piece):
     def get_blocked_positions(self, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         states = list()
-        if (is_within_board(row - 1, col, self.total_rows, self.total_cols) and no_obstacle(row - 1, col)):
+        self.can_block(col, row, states)
+        if (self.can_block(row-1,col,states)):
             states.append(State((row - 1, col)))
-        if (is_within_board(row - 1, col + 1, self.total_rows, self.total_cols) and no_obstacle(row - 1, col + 1)):
+        if (self.can_block(row-1,col+1,states)):
             states.append(State((row - 1, col + 1)))
-        if (is_within_board(row, col + 1, self.total_rows, self.total_cols) and no_obstacle(row, col + 1)):
+        if (self.can_block(row, col+1, states)):
             states.append(State((row, col + 1)))
-        if (is_within_board(row + 1, col + 1, self.total_rows, self.total_cols) and no_obstacle(row + 1, col + 1)):
+        if (self.can_block(row + 1, col+1, states)):
             states.append(State((row + 1, col + 1)))
-        if (is_within_board(row + 1, col, self.total_rows, self.total_cols) and no_obstacle(row + 1, col)):
+        if (self.can_block(row + 1, col, states)):
             states.append(State((row + 1, col)))
-        if (is_within_board(row + 1, col - 1, self.total_rows, self.total_cols) and no_obstacle(row + 1, col - 1)):
+        if (self.can_block(row + 1, col - 1, states)):
             states.append(State((row + 1, col - 1)))
-        if (is_within_board(row , col - 1, self.total_rows, self.total_cols) and no_obstacle(row, col - 1)):
+        if (self.can_block(row, col - 1, states)):
             states.append(State((row, col - 1)))
-        if (is_within_board(row - 1, col - 1, self.total_rows, self.total_cols) and no_obstacle(row - 1, col - 1)):
+        if (self.can_block(row - 1, col - 1, states)):
             states.append(State((row - 1, col - 1)))
         return states
+
+    def can_block(self, row, col, states):
+        if (is_within_board(row, col, self.total_rows, self.total_cols) and
+            (no_obstacle(row, col) or obstacles[(row, col)] == (row, col, "E"))):
+            states.append(State((row, col)))
 
     def get_next(self, board, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
@@ -138,7 +144,7 @@ class Bishop(Piece):
         #upper left
         dx, dy = row - 1, col - 1
         while (dx >= 0 and dy >= 0):
-            if (no_obstacle(dx, dy)):
+            if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
                 states.append(State((dx, dy)))
             else:
                 break
@@ -146,7 +152,7 @@ class Bishop(Piece):
         #upper right
         dx, dy = row - 1, col + 1
         while (dx >= 0 and dy < self.total_cols):
-            if (no_obstacle(dx, dy)):
+            if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
                 states.append(State((dx, dy)))
             else:
                 break
@@ -154,7 +160,7 @@ class Bishop(Piece):
         #lower left
         dx, dy = row + 1, col - 1
         while (dx < self.total_rows and dy >= 0):
-            if (no_obstacle(dx, dy)):
+            if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
                 states.append(State((dx, dy)))
             else:
                 break
@@ -162,7 +168,7 @@ class Bishop(Piece):
         #lower right
         dx, dy = row + 1, col + 1
         while (dx < self.total_rows and dy < self.total_cols):
-            if (no_obstacle(dx, dy)):
+            if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
                 states.append(State((dx, dy)))
             else:
                 break
@@ -213,14 +219,14 @@ class Rook(Piece):
         #same row
         dy = col - 1
         while dy >= 0:
-            if no_obstacle(row, dy):
+            if no_obstacle(row, dy) or obstacles[(row, dy)] == (row, dy, "E"):
                 states.append(State((row, dy)))
                 dy -= 1
             else:
                 break
         dy = col + 1
         while dy < self.total_cols:
-            if no_obstacle(row, dy):
+            if no_obstacle(row, dy) or obstacles[(row, dy)] == (row, dy, "E"):
                 states.append(State((row, dy)))
                 dy += 1
             else:
@@ -228,14 +234,14 @@ class Rook(Piece):
 
         dx = row - 1
         while dx >= 0:
-            if no_obstacle(dx, col):
+            if no_obstacle(dx, col) or obstacles[(dx, col)] == (dx, col, "E"):
                 states.append(State((dx, col)))
                 dx -= 1
             else:
                 break
         dx = row + 1
         while dx < self.total_rows:
-            if no_obstacle(dx, col):
+            if no_obstacle(dx, col) or obstacles[(dx, col)] == (dx, col, "E"):
                 states.append(State((dx, col)))
                 dx += 1
             else:
@@ -265,12 +271,39 @@ class Knight(Piece):
     def get_blocked_positions(self, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         horizontal = [2, 1, -1, -2, -2, -1, 1, 2]
-        vertical = [1, 2, 2, 1, -1, -2, -2, -1]
+        vertical =   [1, 2, 2, 1, -1, -2, -2, -1]
         states = []
         for i in range(len(horizontal)):
             dx, dy = row - horizontal[i], col - vertical[i]
             if is_within_board(dx, dy, self.total_rows, self.total_cols) and no_obstacle(dx, dy):
-                states.append(State((dx, dy)))
+                if horizontal[i] == 2:
+                    if vertical[i] == 1:
+                        if (row + 1, col) not in obstacles and (row + 2, col) not in obstacles and (row + 2, col + 1):
+                            states.append(State((dx,dy)))
+                    elif vertical[i] == -1:
+                        if (row + 1, col) not in obstacles and (row + 2, col) not in obstacles and (row + 2, col - 1):
+                            states.append(State((dx,dy)))
+                elif horizontal[i] == -2:
+                    if vertical[i] == 1:
+                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2 , col + 1):
+                            states.append(State((dx,dy)))
+                    elif vertical[i] == -1:
+                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2 , col - 1):
+                            states.append(State((dx,dy)))
+                elif horizontal[i] == 1:
+                    if vertical[i] == 2:
+                        if (row + 1, col) not in obstacles and (row, col + 1) not in obstacles and (row, col + 2):
+                            states.append(State((dx,dy)))
+                    elif vertical[i] == -2:
+                        if (row + 1, col) not in obstacles and (row, col - 1) not in obstacles and (row, col - 2):
+                            states.append(State((dx,dy)))
+                else:
+                    if vertical[i] == 2:
+                        if (row - 1, col) not in obstacles and (row - 1, col + 1) not in obstacles and (row -1 , col + 2):
+                            states.append(State((dx,dy)))
+                    elif vertical[i] == -2:
+                        if (row - 1, col) not in obstacles and (row - 1, col - 1) not in obstacles and (row -1 , col - 2):
+                            states.append(State((dx,dy)))
         return states
     def get_next(self, board, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
@@ -381,7 +414,7 @@ The code below refers to the actual searching algorithm adopted in the program
 
 def search():
     board = read_file_and_init_variables()
-    board.print(True)
+    #board.print(True)
     frontier, actions, expand = list(), list(), list()
     king = King(board.rows, board.cols)
     curr = Node(State(board.start_pos))
@@ -389,18 +422,18 @@ def search():
     frontier.append(curr)
     nodesExplored = 0
     while len(frontier) > 0:
+        board.map[curr.curr_pos[0]][curr.curr_pos[1]] = '@'
         curr = frontier.pop()
         assert curr.curr_pos in reached
-        print("curr:",curr)
+        assert curr.curr_pos not in obstacles
         nodesExplored += 1
         if curr.curr_pos in board.goal_pos:
             track_path(actions, board, curr)
-            board.print(True)
+            #board.print(True)
             return actions, nodesExplored
         expand = king.get_next(board, curr.curr_pos)
-        print("Expand:",expand)
         for node in expand:
-            node.parent = node
+            node.parent = curr
             if node in reached:
                 continue
             else:
@@ -438,14 +471,11 @@ def show(obstacles):
 
 def read_file_and_init_variables():
     try:
-        #filename = sys.argv[1]
-        filename = "4.txt"
+        filename = sys.argv[1]
+        #filename = "4.txt"
         file = open(filename, "r")
         row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix = read_board_data(file)
         board = Board(row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos)
-        assert board.start_pos not in board.obstacles
-        for goal in board.goal_pos:
-            assert goal not in board.obstacles
     except (FileNotFoundError):
         print("File cannot be found")
     except (FileExistsError):
@@ -523,8 +553,8 @@ def read_enemies_data(idx, lines, row_no, col_no, obstacles):
         cannot_go = enemy.get_blocked_positions((curr_row, curr_col))
         if cannot_go is not None:
             for block in cannot_go:
-                tuple = (block.curr_row, block.curr_col)
-                obstacles[tuple] = tuple
+                tuple = (block.curr_row, block.curr_col, "E")
+                obstacles[(block.curr_row, block.curr_col)] = tuple
     return enemies
 
 def get_piece(piece, rows, cols):
@@ -583,5 +613,6 @@ The code below is the main code to execute the program. It is assume that the di
 
 if __name__ == "__main__":
     print(run_DFS())
+
 
     
