@@ -414,7 +414,7 @@ The code below refers to the actual searching algorithm adopted in the program
 
 def search():
     board = read_file_and_init_variables()
-    #board.print(True)
+    board.print(True)
     frontier, actions, expand = list(), list(), list()
     king = King(board.rows, board.cols)
     curr = Node(State(board.start_pos))
@@ -429,7 +429,7 @@ def search():
         nodesExplored += 1
         if curr.curr_pos in board.goal_pos:
             track_path(actions, board, curr)
-            #board.print(True)
+            board.print(True)
             return actions, nodesExplored
         expand = king.get_next(board, curr.curr_pos)
         for node in expand:
@@ -615,4 +615,3 @@ if __name__ == "__main__":
     print(run_DFS())
 
 
-    
