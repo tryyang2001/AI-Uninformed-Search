@@ -13,4 +13,4 @@ searching algorithm. Note that for UCS and AStar there are also a third element 
 
 The moment of each piece is as follow:
 
-![Movement of each piece](image.png)
+![Movement of each piece](https://github.com/tryyang2001/AI-Uninformed-Search/blob/master/Problem%20Description/Capture.PNG)
