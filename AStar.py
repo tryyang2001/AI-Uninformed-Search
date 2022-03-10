@@ -637,6 +637,7 @@ def search():
     board = read_file_and_init_variables()
     for obstacle in board.obstacles:
         board.cost_matrix[obstacle[0]][obstacle[1]] = 0
+    board.print_cost()
     frontier, actions, expand = PriorityQueue(), list(), list()
     king = King(board.rows, board.cols)
     curr = Node(State(board.start_pos))
@@ -652,7 +653,7 @@ def search():
             reached[curr_tuple[1].curr_pos] = curr_tuple[1]
         if curr_tuple[1].curr_pos in board.goal_pos:
             pathCost = track_path(actions, board, curr_tuple[1])
-            #board.print(True)
+            board.print(True)
             return actions, nodesExplored, pathCost
         expand = king.get_next(board, curr_tuple[1].curr_pos)
         for node in expand:

@@ -434,11 +434,6 @@ def search():
         expand = king.get_next(board, curr.curr_pos)
         for node in expand:
             node.parent = curr
-            if node.curr_pos in board.goal_pos:
-                print("early goal test")
-                track_path(actions, board, node)
-                board.print(True)
-                return actions, nodesExplored
             if node in reached:
                 continue
             else:

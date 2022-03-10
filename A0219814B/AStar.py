@@ -1,10 +1,10 @@
 import enum
-import os
 import sys
 import abc
 import string
 import math
-from queue import Queue
+from queue import PriorityQueue
+
 # Helper functions to aid in your implementation. Can edit/remove
 EMPTY_SPACE = ' '
 GOAL = 'G'
@@ -48,13 +48,13 @@ col_mapping = {
     "y": 24,
     "z": 25
 }
-#Global variables for ease of use
+# Global variables for ease of use
 obstacles = dict()
 reached = dict()
-cost_matrix = list()
+
 
 def is_within_board(row, col, total_row, total_col):
-    return row  < total_row and row  >= 0 and col < total_col and col >= 0
+    return row < total_row and row >= 0 and col < total_col and col >= 0
 
 def no_obstacle(row, col):
     return (row, col) not in obstacles
@@ -68,22 +68,24 @@ Each piece class stores information about the movement and generate all the avai
 To initialize each piece class, users are expected to provide the total rows and total columns of the game board.
 #######################################################################"""
 
+
 class Piece:
     def __init__(self, rows, cols):
         self.total_rows, self.total_cols = rows, cols
+
 
 class King(Piece):
     def get_blocked_positions(self, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         states = list()
         self.can_block(col, row, states)
-        if (self.can_block(row-1,col,states)):
+        if (self.can_block(row - 1, col, states)):
             states.append(State((row - 1, col)))
-        if (self.can_block(row-1,col+1,states)):
+        if (self.can_block(row - 1, col + 1, states)):
             states.append(State((row - 1, col + 1)))
-        if (self.can_block(row, col+1, states)):
+        if (self.can_block(row, col + 1, states)):
             states.append(State((row, col + 1)))
-        if (self.can_block(row + 1, col+1, states)):
+        if (self.can_block(row + 1, col + 1, states)):
             states.append(State((row + 1, col + 1)))
         if (self.can_block(row + 1, col, states)):
             states.append(State((row + 1, col)))
@@ -97,7 +99,7 @@ class King(Piece):
 
     def can_block(self, row, col, states):
         if (is_within_board(row, col, self.total_rows, self.total_cols) and
-            (no_obstacle(row, col) or obstacles[(row, col)] == (row, col, "E"))):
+                (no_obstacle(row, col) or obstacles[(row, col)] == (row, col, "E"))):
             states.append(State((row, col)))
 
     def get_next(self, board, curr_pos):
@@ -105,21 +107,26 @@ class King(Piece):
         states = list()
         if (is_within_board(row - 1, col, self.total_rows, self.total_cols) and can_travel(board, col, row - 1)):
             states.append(Node(State((row - 1, col))))
-        if (is_within_board(row - 1, col + 1, self.total_rows, self.total_cols) and can_travel(board, col + 1, row - 1)):
+        if (is_within_board(row - 1, col + 1, self.total_rows, self.total_cols) and can_travel(board, col + 1,
+                                                                                               row - 1)):
             states.append(Node(State((row - 1, col + 1))))
         if (is_within_board(row, col + 1, self.total_rows, self.total_cols) and can_travel(board, col + 1, row)):
             states.append(Node(State((row, col + 1))))
-        if (is_within_board(row + 1, col + 1, self.total_rows, self.total_cols) and can_travel(board, col + 1, row + 1)):
+        if (is_within_board(row + 1, col + 1, self.total_rows, self.total_cols) and can_travel(board, col + 1,
+                                                                                               row + 1)):
             states.append(Node(State((row + 1, col + 1))))
         if (is_within_board(row + 1, col, self.total_rows, self.total_cols) and can_travel(board, col, row + 1)):
             states.append(Node(State((row + 1, col))))
-        if (is_within_board(row + 1, col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1, row + 1)):
+        if (is_within_board(row + 1, col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1,
+                                                                                               row + 1)):
             states.append(Node(State((row + 1, col - 1))))
-        if (is_within_board(row , col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1, row)):
+        if (is_within_board(row, col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1, row)):
             states.append(Node(State((row, col - 1))))
-        if (is_within_board(row - 1, col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1, row - 1)):
+        if (is_within_board(row - 1, col - 1, self.total_rows, self.total_cols) and can_travel(board, col - 1,
+                                                                                               row - 1)):
             states.append(Node(State((row - 1, col - 1))))
         return states
+
 
 class Queen(Piece):
     def get_blocked_positions(self, curr_pos):
@@ -141,7 +148,7 @@ class Bishop(Piece):
     def get_blocked_positions(self, curr_pos):
         states = []
         row, col = curr_pos[0], curr_pos[1]
-        #upper left
+        # upper left
         dx, dy = row - 1, col - 1
         while (dx >= 0 and dy >= 0):
             if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
@@ -149,7 +156,7 @@ class Bishop(Piece):
             else:
                 break
             dx, dy = dx - 1, dy - 1
-        #upper right
+        # upper right
         dx, dy = row - 1, col + 1
         while (dx >= 0 and dy < self.total_cols):
             if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
@@ -157,7 +164,7 @@ class Bishop(Piece):
             else:
                 break
             dx, dy = dx - 1, dy + 1
-        #lower left
+        # lower left
         dx, dy = row + 1, col - 1
         while (dx < self.total_rows and dy >= 0):
             if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
@@ -165,7 +172,7 @@ class Bishop(Piece):
             else:
                 break
             dx, dy = dx + 1, dy - 1
-        #lower right
+        # lower right
         dx, dy = row + 1, col + 1
         while (dx < self.total_rows and dy < self.total_cols):
             if no_obstacle(dx, dy) or obstacles[(dx, dy)] == (dx, dy, "E"):
@@ -212,11 +219,12 @@ class Bishop(Piece):
             dx, dy = dx + 1, dy + 1
         return states
 
+
 class Rook(Piece):
     def get_blocked_positions(self, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         states = []
-        #same row
+        # same row
         dy = col - 1
         while dy >= 0:
             if no_obstacle(row, dy) or obstacles[(row, dy)] == (row, dy, "E"):
@@ -267,11 +275,12 @@ class Rook(Piece):
                 break
         return states
 
+
 class Knight(Piece):
     def get_blocked_positions(self, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         horizontal = [2, 1, -1, -2, -2, -1, 1, 2]
-        vertical =   [1, 2, 2, 1, -1, -2, -2, -1]
+        vertical = [1, 2, 2, 1, -1, -2, -2, -1]
         states = []
         for i in range(len(horizontal)):
             dx, dy = row - horizontal[i], col - vertical[i]
@@ -279,32 +288,35 @@ class Knight(Piece):
                 if horizontal[i] == 2:
                     if vertical[i] == 1:
                         if (row + 1, col) not in obstacles and (row + 2, col) not in obstacles and (row + 2, col + 1):
-                            states.append(State((dx,dy)))
+                            states.append(State((dx, dy)))
                     elif vertical[i] == -1:
                         if (row + 1, col) not in obstacles and (row + 2, col) not in obstacles and (row + 2, col - 1):
-                            states.append(State((dx,dy)))
+                            states.append(State((dx, dy)))
                 elif horizontal[i] == -2:
                     if vertical[i] == 1:
-                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2 , col + 1):
-                            states.append(State((dx,dy)))
+                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2, col + 1):
+                            states.append(State((dx, dy)))
                     elif vertical[i] == -1:
-                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2 , col - 1):
-                            states.append(State((dx,dy)))
+                        if (row - 1, col) not in obstacles and (row - 2, col) not in obstacles and (row + 2, col - 1):
+                            states.append(State((dx, dy)))
                 elif horizontal[i] == 1:
                     if vertical[i] == 2:
                         if (row + 1, col) not in obstacles and (row, col + 1) not in obstacles and (row, col + 2):
-                            states.append(State((dx,dy)))
+                            states.append(State((dx, dy)))
                     elif vertical[i] == -2:
                         if (row + 1, col) not in obstacles and (row, col - 1) not in obstacles and (row, col - 2):
-                            states.append(State((dx,dy)))
+                            states.append(State((dx, dy)))
                 else:
                     if vertical[i] == 2:
-                        if (row - 1, col) not in obstacles and (row - 1, col + 1) not in obstacles and (row -1 , col + 2):
-                            states.append(State((dx,dy)))
+                        if (row - 1, col) not in obstacles and (row - 1, col + 1) not in obstacles and (
+                        row - 1, col + 2):
+                            states.append(State((dx, dy)))
                     elif vertical[i] == -2:
-                        if (row - 1, col) not in obstacles and (row - 1, col - 1) not in obstacles and (row -1 , col - 2):
-                            states.append(State((dx,dy)))
+                        if (row - 1, col) not in obstacles and (row - 1, col - 1) not in obstacles and (
+                        row - 1, col - 2):
+                            states.append(State((dx, dy)))
         return states
+
     def get_next(self, board, curr_pos):
         row, col = curr_pos[0], curr_pos[1]
         horizontal = [2, 1, -1, -2, -2, -1, 1, 2]
@@ -316,6 +328,7 @@ class Knight(Piece):
                 states.append(State((dx, dy)))
         return states
 
+
 """#######################################################################
 The code below refers to the generation of the game board.
 To initialize the board class, users are expected to provide the size of the board (rows * cols), the number of obstacles,
@@ -323,8 +336,9 @@ the position of each obstacles (as a list), the enemies information (type and po
 starting position of the King piece, and the goal position(s) of the map.
 #######################################################################"""
 
+
 class Board:
-    def __init__(this, rows, cols, obstacle_no, obstacles, enemies, start_pos, goal_pos):
+    def __init__(this, rows, cols, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix):
         this.rows = rows
         this.cols = cols
         this.obstacle_no = obstacle_no
@@ -355,6 +369,7 @@ class Board:
         if goal_pos != None:
             for i in range(len(goal_pos)):
                 this.map[goal_pos[i][0]][goal_pos[i][1]] = GOAL
+        this.cost_matrix = cost_matrix
 
     def print(this, show_curs=False):
         if show_curs:
@@ -362,19 +377,22 @@ class Board:
                 if i + 1 == this.rows + 1:
                     for length in range(int(math.log(i + 1))):
                         print(" ", end="")
-                    print(" | ", end = "")
+                    if this.rows - 1 > 10:
+                        print("| ", end="")
+                    else:
+                        print(" | ", end="")
                     count = 0
                     for c in string.ascii_lowercase:
                         if count >= this.cols:
                             break
-                        print(c, end = " | ")
+                        print(c, end=" | ")
                         count += 1
                     print()
                 else:
                     if i < 10:
-                        print("",i, end = " | ")
+                        print("", i, end=" | ")
                     else:
-                        print(i, end = " | ")
+                        print(i, end=" | ")
                 if i < this.rows:
                     for j in range(this.cols):
                         print(this.map[i][j], end=" | ")
@@ -385,12 +403,17 @@ class Board:
                     print(this.map[i][j], end=" | ")
                 print()
         print()
+    def print_cost(self):
+        for cost in self.cost_matrix:
+            print(cost)
 
 """#######################################################################
 The code below refers to the node of the graph when launching the algorithm, instead of state.
 Each state (node) stores the current position of the piece to escape, its parent node (for tracing), and its state (which
 is just current position in tuple format)
 #######################################################################"""
+
+
 class State:
     def __init__(self, curr_pos):
         self.curr_row = curr_pos[0]
@@ -399,57 +422,30 @@ class State:
     def __repr__(self):
         return "(" + str(chr(97 + self.curr_col)) + "," + str(self.curr_row) + ")"
 
+
 class Node:
     def __init__(self, state):
         self.state = state
         self.parent = None
         self.curr_pos = (state.curr_row, state.curr_col)
+        self.pathCost = 0
+    def get_cost(self, board):
+        return board.cost_matrix[self.curr_pos[0]][self.curr_pos[1]]
     def __repr__(self):
         return "(" + str(chr(97 + self.curr_pos[1])) + "," + str(self.curr_pos[0]) + ")"
-
-
-"""#######################################################################
-The code below refers to the actual searching algorithm adopted in the program
-#######################################################################"""
-
-def search():
-    board = read_file_and_init_variables()
-    board.print(True)
-    frontier, actions, expand = list(), list(), list()
-    king = King(board.rows, board.cols)
-    curr = Node(State(board.start_pos))
-    reached[curr.curr_pos] = curr.curr_pos
-    frontier.append(curr)
-    nodesExplored = 0
-    while len(frontier) > 0:
-        board.map[curr.curr_pos[0]][curr.curr_pos[1]] = '@'
-        curr = frontier.pop()
-        assert curr.curr_pos in reached
-        assert curr.curr_pos not in obstacles
-        nodesExplored += 1
-        if curr.curr_pos in board.goal_pos:
-            track_path(actions, board, curr)
-            board.print(True)
-            return actions, nodesExplored
-        expand = king.get_next(board, curr.curr_pos)
-        for node in expand:
-            node.parent = curr
-            if node.curr_pos in board.goal_pos:
-                print("early goal test")
-                track_path(actions, board, node)
-                board.print(True)
-                return actions, nodesExplored
-            if node in reached:
-                continue
-            else:
-                frontier.append(node)
-                reached[node.curr_pos] = node.curr_pos
-    return actions, nodesExplored
-
+    def __gt__(self, other):
+        return self.pathCost > other.pathCost #or self.curr_pos[0] > other.curr_pos[0] \
+               #or (self.curr_pos[0] == other.curr_pos[0] and self.curr_pos[1] > other.curr_pos[1])
+    def __lt__(self, other):
+        return self.pathCost < other.pathCost
+               #or self.curr_pos[0] < other.curr_pos[0] \
+               #or (self.curr_pos[0] == other.curr_pos[0] and self.curr_pos[1] < other.curr_pos[1])
 
 def track_path(actions, board, curr):
+    pathCost = 0
     board.map[curr.curr_pos[0]][curr.curr_pos[1]] = OWN_KING
     while curr.parent is not None:
+        pathCost += board.cost_matrix[curr.curr_pos[0]][curr.curr_pos[1]]
         temp = []
         curr_pos = (chr(97 + curr.parent.curr_pos[1]), curr.parent.curr_pos[0])
         next_pos = (chr(97 + curr.curr_pos[1]), curr.curr_pos[0])
@@ -460,32 +456,13 @@ def track_path(actions, board, curr):
         if curr is not None:
             board.map[curr.curr_pos[0]][curr.curr_pos[1]] = REACHED
     actions.reverse()
+    return pathCost
 
-
-### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
-# To return: List of moves and nodes explored
-def run_DFS():
-    # You can code in here but you cannot remove this function or change the return type
-    moves, nodesExplored = search() #For reference
-    return moves, nodesExplored #Format to be returned
 
 def show(obstacles):
     for pos in obstacles:
-        print((chr(pos[0] + 97), pos[1]), end = " ")
+        print((chr(pos[0] + 97), pos[1]), end=" ")
     print()
-
-def read_file_and_init_variables():
-    try:
-        filename = sys.argv[1]
-        #filename = "4.txt"
-        file = open(filename, "r")
-        row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix = read_board_data(file)
-        board = Board(row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos)
-    except (FileNotFoundError):
-        print("File cannot be found")
-    except (FileExistsError):
-        print("File does not exist1.txt")
-    return board
 
 
 """#######################################################################
@@ -493,15 +470,18 @@ The code below refers to the reading of the input text file.
 It is assume that the input text file is always in a correct input format.
 #######################################################################"""
 
+
 def read_board_data(file):
     lines = file.readlines()
     col_no, obstacle_no, obstacles, row_no = read_board_size_and_obstacles(lines)
     idx, cost_matrix = read_cost(col_no, lines, row_no)
+    assert cost_matrix is not None
     enemies = read_enemies_data(idx, lines, row_no, col_no, obstacles)
     for enemy in enemies:
         assert (enemy[1], enemy[2]) in obstacles
     start_pos, goal_pos = read_start_and_goal(lines, obstacles)
     return row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix
+
 
 def read_start_and_goal(lines, obstacles):
     idx = -1
@@ -528,8 +508,9 @@ def read_start_and_goal(lines, obstacles):
                 if goal in obstacles:
                     obstacles.pop(goal)
     else:
-        goal_pos = None #no goal
+        goal_pos = None  # no goal
     return start_pos, goal_pos
+
 
 def read_enemies_data(idx, lines, row_no, col_no, obstacles):
     enemy_count = lines[idx].replace("Number of Enemy King, Queen, Bishop, Rook, Knight (space between):", "").split()
@@ -538,7 +519,7 @@ def read_enemies_data(idx, lines, row_no, col_no, obstacles):
     idx += 2
     for i in range(len(enemy_count)):
         total_enemy += int(enemy_count[i])
-    #mark enemy positions as obstacles
+    # mark enemy positions as obstacles
     for num in range(total_enemy):
         data = lines[idx].replace('[', "").replace(']', "").split(',')
         data_piece = data[0]
@@ -562,6 +543,7 @@ def read_enemies_data(idx, lines, row_no, col_no, obstacles):
                 obstacles[(block.curr_row, block.curr_col)] = tuple
     return enemies
 
+
 def get_piece(piece, rows, cols):
     if piece == "King":
         return King(rows, cols)
@@ -574,9 +556,11 @@ def get_piece(piece, rows, cols):
     elif piece == "Knight":
         return Knight(rows, cols)
 
+
 def print_cost_matrix():
     for i in range(len(cost_matrix)):
         print(cost_matrix[i])
+
 
 def read_cost(col_no, lines, row_no):
     cost_matrix = init_cost_matrix(col_no, row_no)
@@ -589,6 +573,7 @@ def read_cost(col_no, lines, row_no):
         data_row = int(data[0][1:len(data[0])])
         data_col = int(col_mapping[data[0][0]])
         cost_matrix[data_row][data_col] = int(data[1])
+    assert cost_matrix is not None
     return idx, cost_matrix
 
 
@@ -612,11 +597,85 @@ def read_board_size_and_obstacles(lines):
         obstacles[obstacle] = obstacle
     return col_no, obstacle_no, obstacles, row_no
 
+def read_file_and_init_variables():
+    try:
+        filename = sys.argv[1]
+        #filename = "4.txt"
+        file = open(filename, "r")
+        row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix = read_board_data(file)
+        board = Board(row_no, col_no, obstacle_no, obstacles, enemies, start_pos, goal_pos, cost_matrix)
+    except (FileNotFoundError):
+        print("File cannot be found")
+    except (FileExistsError):
+        print("File does not exist1.txt")
+    return board
+
+
+"""#######################################################################
+The code below refers to the actual searching algorithm adopted in the program
+#######################################################################"""
+
+class PriorityQueue(PriorityQueue):
+    def __repr__(self):
+        return str(self.queue)
+
+def dist(curr_pos, goal):
+    dx = goal[0] - curr_pos[0]
+    dy = goal[1] - curr_pos[1]
+    return math.floor(math.sqrt(dx**2 + dy**2)) #minimum moves to travel from one point to anotherrequired
+
+def h(node, board):
+    heuristic = []
+    for goal in board.goal_pos:
+        heuristic.append(dist(node.curr_pos, goal))
+    return min(heuristic)
+
+def f(node, board):
+    return node.pathCost + h(node, board)
+
+def search():
+    board = read_file_and_init_variables()
+    for obstacle in board.obstacles:
+        board.cost_matrix[obstacle[0]][obstacle[1]] = 0
+    frontier, actions, expand = PriorityQueue(), list(), list()
+    king = King(board.rows, board.cols)
+    curr = Node(State(board.start_pos))
+    frontier.put((f(curr, board), curr))
+    nodesExplored = 0
+    #assume h is consistent heuristic, limited graph search can be applied
+    while not frontier.empty():
+        curr_tuple = frontier.get()
+        nodesExplored += 1
+        if curr_tuple[1].curr_pos in reached:
+            continue
+        if curr_tuple[1].curr_pos not in reached:
+            reached[curr_tuple[1].curr_pos] = curr_tuple[1]
+        if curr_tuple[1].curr_pos in board.goal_pos:
+            pathCost = track_path(actions, board, curr_tuple[1])
+            #board.print(True)
+            return actions, nodesExplored, pathCost
+        expand = king.get_next(board, curr_tuple[1].curr_pos)
+        for node in expand:
+            assert node.curr_pos not in reached
+            node.parent = curr_tuple[1]
+            node.pathCost = node.get_cost(board) + node.parent.pathCost
+            frontier.put((f(node, board), node))
+    return actions, nodesExplored, 0
+
+### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
+# To return: List of moves and nodes explored
+def run_AStar():
+    # You can code in here but you cannot remove this function or change the return type
+
+    moves, nodesExplored, pathCost= search() #For reference
+    return moves, nodesExplored, pathCost #Format to be returned
+
+
 """#######################################################################
 The code below is the main code to execute the program. It is assume that the directory exists and the file(s) can be found.
 #######################################################################"""
 
 if __name__ == "__main__":
-    print(run_DFS())
+    print(run_AStar())
 
-
+    
